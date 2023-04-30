@@ -1,0 +1,140 @@
+---
+title: "MT500 Lara Gannon Unicef Assignment"
+author: "LG"
+format: html
+editor: visual
+---
+
+## Unicef Data Analysis
+
+```{r}
+library(ggplot2)
+## Warning: package 'ggplot2' was built under R version 4.2.2
+```
+
+```{r}
+library(rnaturalearth)
+## Warning: package 'rnaturalearth' was built under R version 4.2.3
+
+```
+
+```{r}
+library(rnaturalearthdata)
+
+```
+
+```{r}
+library(dplyr)
+```
+
+```{r}
+library(readr)
+
+births_under_2500g <- read.csv("unicef_indicator_1 (1).csv")
+antenatal_care <- read.csv("unicef_indicator_2 (1).csv")
+metadata <-  read.csv("unicef_metadata.csv")
+```
+
+## **Births under 2500g by country**
+
+```{r}
+births_by_country <- births_under_2500g %>%
+  group_by(country) %>%
+  summarize(total_births = sum(obs_value))
+
+# Get world map data
+world_map <- ne_countries(scale = "medium", returnclass = "sf")
+
+# Join the birth data to the map data and plot
+merged_data <- world_map %>%
+  left_join(births_by_country, by = c("sovereignt" = "country"))
+ggplot() +
+  geom_sf(data = merged_data, aes(fill = total_births), color = "white") +
+  scale_fill_gradient(low = "green", high = "red") +
+  labs(title = "Births under 2500g by country") +
+  theme_void()
+
+```
+
+```{r}
+births_by_country <- births_under_2500g %>%
+  group_by(country) %>%
+  summarize(total_births = sum(obs_value)) %>%
+  arrange(desc(total_births)) 
+
+top_10 <- head(births_by_country, 10) 
+
+print(top_10)
+```
+
+## **Antenatal care attended during pregnancy by country**
+
+```{r}
+library(ggplot2)
+library(dplyr)
+
+# Grouping country
+avg_care_by_country <- antenatal_care %>%
+  group_by(country) %>%
+  summarize(avg_care_percent = mean(obs_value)) %>%
+  arrange(avg_care_percent) 
+
+bottom_10 <- avg_care_by_country %>%
+  slice(1:10)
+
+ggplot(bottom_10, aes(x = country, y = avg_care_percent)) +
+  geom_bar(stat = "identity", fill = "red") +
+  labs(x = "Country", y = "Avg. Antenatal Care Attendance (%)",
+       title = "Average Antenatal Care Attendance by Country (Bottom 10)") +
+  theme(axis.text.x = element_text(angle = 90, vjust = 0.1, hjust=0.5))
+```
+
+-   The bar chart above shows the average antenatal care attendance for the bottom 10 countries, with Somalia having the lowest attendance rate, followed by South Sudan and Ethiopia.
+
+## **Military expenditure vs. Life expectancy**
+
+```{r}
+library(ggplot2)
+ggplot(metadata, aes(x = Life.expectancy.at.birth..total..years., y = Military.expenditure....of.GDP.)) +
+  geom_point() +
+  geom_smooth(method = "lm") +
+  labs(x = "Life expectancy at birth, total (years)", y = "Military expenditure (% of GDP)",
+       title = "Military Expenditure vs Life Expectancy") +
+  theme_bw() +
+  theme(panel.grid.major = element_blank(), panel.grid.minor = element_blank())
+```
+
+-   The scatter plot shows no strong linear relationship between military expenditure and life expectancy around the world.
+
+## **Military expenditure vs. Life expectancy**
+
+```{r}
+library(ggplot2)
+military_metadata <- metadata[, c("country", "year", "Military.expenditure....of.GDP.")]
+names(military_metadata) <- c("country", "year", "military_expenditure")
+
+# Subset the military expenditure data for the top 10 countries in 2021 (excluding Kuwait)
+top_10_countries_2021 <- head(subset(military_metadata, year == 2021 & country != "Kuwait")[order(subset(military_metadata, year == 2021 & country != "Kuwait")$military_expenditure, decreasing = TRUE),], 10)
+
+# Subset the military expenditure data for the top 10 countries over time (excluding Kuwait)
+# and then plot a Time Series graph for the top 10 
+military_top_10 <- subset(military_metadata, country %in% top_10_countries_2021$country & country != "Kuwait")
+ggplot(military_top_10, aes(x = year, y = military_expenditure, color = country)) +
+  geom_line() +
+  labs(title = "Top 10 Countries by Military Expenditure Over Time (1960-2020, excluding Kuwait)",
+       x = "Year", y = "Military Expenditure % of GDP")
+```
+
+-   The time series chart above shows that most of the top 10 countries by military expenditure have had a declining trend since 1960, but there has been a convergence between the biggest spenders (Oman and Russia) and the bottom 8 (Algeria, Armenia, Azerbaijan, Israel, Jordan, Morocco, Qatar, Saudi Arabia) between 2000 and 2021. As time goes on, it will be fascinating to see how these 10 countries will evolve (who will enter/leave the Top 10) and if they will remain around the 5% level.
+
+***Unicef Data Analysis Summary***
+
+We can now acquire a comprehensive understanding of nations with different birth rates and prenatal care thanks to the insights gained by identifying those with the highest percentage of babies born weighing less than 2500 grams and the lowest antenatal care attendance, along with research concerning military spending and life expectancy. This gives UNICEF the knowledge it needs to decide who to help first when distributing aid. Additionally, UNICEF now has a better understanding of countries with changing military expenditure as a percentage of GDP.
+
+In order to better inform their programs and policies for mother and child health, education, and social protection, UNICEF might utilize the statistics on military spending, babies weighing under 2500g, attendance at prenatal care appointments, and life expectancy. UNICEF, for instance, might focus its assistance on nations with a high rate of deliveries weighing less than 2500 grams and low prenatal care attendance to enhance the health of mothers and children.
+
+UNICEF might learn more about the relationship between military expenditures and the supply of fundamental necessities, such as healthcare, education, and social protection, by examining the trends in military spending and life expectancy. This might influence UNICEF's advocacy efforts to advance peace and security and enhance vulnerable populations' access to essential services.
+
+The information might also be used by UNICEF to pinpoint nations that are improving their ability to cut back on military spending and reallocate funds to support development goals. This might influence how UNICEF interacts with authorities and members of civil society in order to advance inclusive and sustainable development.
+
+Overall, the data on military expenditure, births under 2500g, antenatal care attendance, and life expectancy can provide UNICEF with a comprehensive picture of countries' development challenges and opportunities. By using these insights strategically, UNICEF can improve the lives of children and families around the world by helping those in need and rewarding those who are making efforts to improve the outcomes for their country's population.
